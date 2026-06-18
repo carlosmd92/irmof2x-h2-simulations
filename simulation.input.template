@@ -1,0 +1,65 @@
+#Simulation types and duration
+SimulationType                            MonteCarlo
+NumberOfCycles                            30000
+#NumberofEquilibrationCycles              5000 
+NumberOfInitializationCycles              10000
+
+#Printing options 
+PrintEvery                                50
+PrintForcefieldToOutput                   no
+PrintPseudoAtomsToOutput                  no
+
+#Force field definitions
+CutOffVDW                                 12.8
+CutOffCoulomb                             12.8
+Forcefield                                UFF-TC
+ChargeMethod                              Ewald
+ChargeFromChargeEquilibration             no
+UseChargesFromCIFFile                     yes
+RemoveAtomNumberCodeFromLabel             yes
+
+#Framework and box parameters
+Framework                                 0
+FrameworkName                             IRMOF-2-Br
+UnitCells                                 2 2 2
+
+#Movies generation
+movies                                    no
+WriteMoviesEvery                          500
+
+#Options to measure properties
+ComputeNumberOfMoleculesHistogram         yes
+WriteNumberOfMoleculesHistogramEvery      500
+NumberOfMoleculesRange                    1500
+NumberOfMoleculesHistogramSize            1500
+
+ComputeDensityHistograms                  yes
+ComputeEnergyHistogram                    yes
+WriteEnergyHistogramEvery                 500
+EnergyHistogramSize                       1000
+EnergyHistogramLowerLimit                -100000
+EnergyHistogramUpperLimit                 0
+
+#RDF computation
+ComputeRDF                                no
+WriteRDFEvery                             100
+
+#condition of simulation & other info
+ExternalTemperature                       298.15
+ExternalPressure                          1e5
+FugacityCoefficient                       1
+HeliumVoidFraction                        0.819609
+
+#Component information
+Component 0 MoleculeName                   H2
+            StartingBead                   0
+            MoleculeDefinition             Adsorbates
+            IdealGasRosenbluthWeight       1.0
+            TranslationProbability         0.25
+            RotationProbability            0.25
+            ReinsertionProbability         0.10
+            SwapProbability                0.40
+            CFSwapLambdaProbability        0.00            
+            CBCFSwapLambdaProbability      0.00
+            CBMCProbability                0.00
+            CreateNumberOfMolecules        0

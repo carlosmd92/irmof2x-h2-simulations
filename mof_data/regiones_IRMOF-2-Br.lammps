@@ -1,0 +1,36 @@
+# Archivo de regiones para IRMOF-2-Br.data (generado automáticamente)
+region zn_esfera_1 sphere 5.3242 5.3242 5.3242 3.5
+region zn_esfera_2 sphere 20.4476 20.4476 5.3242 3.5
+region zn_esfera_3 sphere 20.4476 5.3242 20.4476 3.5
+region zn_esfera_4 sphere 5.3242 20.4476 20.4476 3.5
+region zn_esfera_5 sphere 5.3242 5.3242 20.4476 3.5
+region zn_esfera_6 sphere 20.4476 20.4476 20.4476 3.5
+region zn_esfera_7 sphere 5.3242 20.4476 5.3242 3.5
+region zn_esfera_8 sphere 20.4476 5.3242 5.3242 3.5
+region zn_esfera_9 sphere 5.3242 18.2101 18.2101 3.5
+region zn_esfera_10 sphere 20.4476 7.5617 18.2101 3.5
+region zn_esfera_11 sphere 20.4476 18.2101 7.5617 3.5
+region zn_esfera_12 sphere 5.3242 7.5617 7.5617 3.5
+region zn_esfera_13 sphere 5.3242 18.2101 7.5617 3.5
+region zn_esfera_14 sphere 20.4476 7.5617 7.5617 3.5
+region zn_esfera_15 sphere 5.3242 7.5617 18.2101 3.5
+region zn_esfera_16 sphere 20.4476 18.2101 18.2101 3.5
+region zn_esfera_17 sphere 18.2101 5.3242 18.2101 3.5
+region zn_esfera_18 sphere 7.5617 20.4476 18.2101 3.5
+region zn_esfera_19 sphere 7.5617 5.3242 7.5617 3.5
+region zn_esfera_20 sphere 18.2101 20.4476 7.5617 3.5
+region zn_esfera_21 sphere 18.2101 5.3242 7.5617 3.5
+region zn_esfera_22 sphere 7.5617 20.4476 7.5617 3.5
+region zn_esfera_23 sphere 18.2101 20.4476 18.2101 3.5
+region zn_esfera_24 sphere 7.5617 5.3242 18.2101 3.5
+region zn_esfera_25 sphere 18.2101 18.2101 5.3242 3.5
+region zn_esfera_26 sphere 7.5617 7.5617 5.3242 3.5
+region zn_esfera_27 sphere 7.5617 18.2101 20.4476 3.5
+region zn_esfera_28 sphere 18.2101 7.5617 20.4476 3.5
+region zn_esfera_29 sphere 18.2101 18.2101 20.4476 3.5
+region zn_esfera_30 sphere 7.5617 7.5617 20.4476 3.5
+region zn_esfera_31 sphere 18.2101 7.5617 5.3242 3.5
+region zn_esfera_32 sphere 7.5617 18.2101 5.3242 3.5
+
+# Unir todas las esferas en una sola región
+region zonas_zn union 32 zn_esfera_1 zn_esfera_2 zn_esfera_3 zn_esfera_4 zn_esfera_5 zn_esfera_6 zn_esfera_7 zn_esfera_8 zn_esfera_9 zn_esfera_10 zn_esfera_11 zn_esfera_12 zn_esfera_13 zn_esfera_14 zn_esfera_15 zn_esfera_16 zn_esfera_17 zn_esfera_18 zn_esfera_19 zn_esfera_20 zn_esfera_21 zn_esfera_22 zn_esfera_23 zn_esfera_24 zn_esfera_25 zn_esfera_26 zn_esfera_27 zn_esfera_28 zn_esfera_29 zn_esfera_30 zn_esfera_31 zn_esfera_32

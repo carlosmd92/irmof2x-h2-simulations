@@ -1,0 +1,152 @@
+#------------------------------ Simulation general settings  -------------------------------#
+units        real                        # r(Å), t(fs), E(Kcal/mol), T(K), P(atm)
+boundary     p p p                       # PBC in all 3 directions
+dimension    3                           # 3D simulation
+atom_style   full                        # Full atoms/molecules style
+
+# ----------------------------- Variables -------------------#
+variable rcut     equal 12.8      # cut-off
+variable temp     equal 77.15     # temperature
+variable nrep     equal 2         # replication nrep*nrep*nrep
+variable nH2_uc   equal 120       # H2 per u.c (5–350)
+variable nseed    equal 492187    # seed
+variable eqsteps  equal 500000    # equilibration steps
+variable runsteps equal 10000000  # production steps
+variable tabfile string LJFH1_table_${temp}.txt
+
+# ----------------------------- Output directories -------------------#
+shell "mkdir -p Movies MSD RDF"
+
+# ----------------------------- Box MOF --------------------------------------#
+read_data IRMOF-1.data
+
+# ----------------------------- H2 molecule -------------------------------------#
+molecule h2 H2.mol
+
+# bonding settings
+bond_style   harmonic
+bond_coeff   1 0 0.37
+angle_style  harmonic
+angle_coeff  1 0 180.0
+
+# ----------------------------- Zn regions and free zone -------------#
+include regiones_IRMOF-1.lammps   # Zn regions definitions
+
+# Actual box
+region simbox block EDGE EDGE EDGE EDGE EDGE EDGE units box
+
+# Outside Zn 
+region outside_zns union 2 zonas_zn zonas_zn side out
+
+# Free zone = box intersect outside Zn regions
+region free intersect 2 simbox outside_zns
+
+# ----------------------------- Add H2 molecules ---------------------#
+create_atoms 0 random ${nH2_uc} ${nseed} free mol h2 1 # before replication, so H2 per u.c
+
+# ----------------------------- Atom types and group definitions ---------------------- #
+mass 1 1e-15     # Mass of H2 center of mass (virtual, negligible)
+mass 2 1.008     # Mass of actual hydrogen atom
+
+group mof    type 3 4 5 6 7 8 9   # MOF atoms (e.g., Zn, C, O, H framework)
+group H2     type 1 2             # H2 molecule (COM and H atoms)
+group H2_COM type 1               # H2 center of mass
+
+# Exclude MOF–MOF interactions from neighbor list (already rigid framework)
+neigh_modify exclude group mof mof
+
+# ----------------------------- Replica ${nrep}*${nrep}*${nrep} ----------#
+replicate ${nrep} ${nrep} ${nrep}
+
+# ----------------------------- Soft-start and minimization ------------------------#
+timestep 0.5
+kspace_style none             # avoid PPPM while severe overlaps may still exist
+
+pair_style soft 3
+pair_coeff * * 0.0            # start very soft (zero coefficient)
+variable k equal ramp(0,10)   # smoothly ramp soft coefficient 0 → 10 during the run
+fix 1 H2 rigid/nvt/small molecule temp ${temp} ${temp} 1000   # integrate rigid H2 during soft (slightly gentler Tdamp)
+fix 2 all adapt 1 pair soft a * * v_k                         # continuously increase 'a' for pair_style soft
+run 30000
+unfix 2
+unfix 1
+reset_timestep 0
+# --- end soft-start ---
+
+# ----------------------------- Velocity settings for H2 ------------------------#
+velocity H2 create ${temp} ${nseed} mom yes rot yes dist gaussian
+
+# =============================  Forcefields settings  ==============#
+# pair_style hybrid | coul/long + LJFH1
+pair_style hybrid/overlay table linear 10000 coul/long ${rcut}
+
+# coul/long to all pairs
+pair_coeff * * coul/long
+
+# Tabulated FH1 potential to all H_com (type 1) y MOF (types 3,4,5,6,7,8,9) atoms
+pair_coeff 1 1 table ${tabfile} LJFH1_H_com_H_com
+pair_coeff 1 3 table ${tabfile} LJFH1_H_com_H1
+pair_coeff 1 4 table ${tabfile} LJFH1_H_com_C1
+pair_coeff 1 5 table ${tabfile} LJFH1_H_com_C2
+pair_coeff 1 6 table ${tabfile} LJFH1_H_com_C3
+pair_coeff 1 7 table ${tabfile} LJFH1_H_com_O1
+pair_coeff 1 8 table ${tabfile} LJFH1_H_com_O2
+pair_coeff 1 9 table ${tabfile} LJFH1_H_com_Zn1
+
+# Configuración de KSPACE 
+kspace_style pppm 1e-6
+
+# ====== Short NVT equilibration ======
+compute     T_all all temp
+compute     T_H2  H2  temp
+
+thermo_style custom step time temp c_T_H2 pe ke etotal press
+thermo_modify temp T_all
+
+timestep    1.0    # 1 fs
+
+fix         H2_EQ H2 rigid/nvt/small molecule temp ${temp} ${temp} 100.0
+run         ${eqsteps}        # 0.5 ns en unidades real
+unfix       H2_EQ
+reset_timestep  0
+
+# =============================  RDF H_com – MOF ============================= #
+compute rdf_Hcom_MOF all rdf 200 1 3  1 4  1 5  1 6  1 7  1 8  1 9
+fix rdf_out all ave/time 1000 10000 10000000 c_rdf_Hcom_MOF[*] file RDF/rdf_Hcom_MOF.out mode vector
+
+# =============================  diffusion calculations ============================= #
+compute msd_all H2 msd com yes  # MSD using COM
+variable msd_x equal c_msd_all[1]
+variable msd_y equal c_msd_all[2]
+variable msd_z equal c_msd_all[3]
+variable msd_tot equal c_msd_all[4]
+variable diff equal (0.1*c_msd_all[4])/(6*(step*dt+0.0000001))
+
+# =============================  Print settings ============================= #
+thermo       1000
+thermo_style custom step time temp c_T_H2 evdwl epair elong pe ke etotal c_msd_all[4] v_diff
+
+# --- MSD fina: without averages, high resolution (0.1)
+fix msd_fine H2 ave/time 100 1 100 v_msd_x v_msd_y v_msd_z v_msd_tot file MSD/msd_fine.out mode scalar
+
+# --- MSD long: with/without averages, resolution of (10 ps)
+fix msd_coarse H2 ave/time 1000 100 100000 v_msd_x v_msd_y v_msd_z v_msd_tot file MSD/msd_coarse.out mode scalar
+fix msd_old H2 ave/time 10 1000 10000 v_msd_x v_msd_y v_msd_z v_msd_tot file MSD/msd.out mode scalar
+fix msd_avg H2 ave/time 100 100 10000 v_msd_x v_msd_y v_msd_z v_msd_tot file MSD/msd_avg.out mode scalar
+
+# Save trajectory
+dump 1 H2 custom 5000 Movies/diffusion.lammpstrj id type mol x y z vx vy vz
+dump 2 H2_COM custom 500 Movies/diffusion_com.lammpstrj id type xu yu zu
+dump 3 H2_COM custom 10000 Movies/vel_com.lammpstrj vx vy vz
+
+neigh_modify delay 1 every 1 check yes
+neighbor 2.0 bin
+
+# ============================= RUN settings  =============================#
+timestep     1.0
+fix H2_R H2 rigid/nvt/small molecule temp ${temp} ${temp} 100
+run          ${runsteps}
+
+# =============================  Save final configuration & restart ============================= #
+write_data IRMOF-1_H2_final.data
+write_restart restart_IRMOF_H2_final.bin
