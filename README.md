@@ -5,8 +5,8 @@ diffusion in **IRMOF-1 (MOF-5)** and its halogenated **IRMOF-2-X (X = F, Cl, Br,
 derivatives.
 
 Accompanies: C. Morales-Díaz, A. Mejía, G. Alonso, *Halogenation effects on
-hydrogen storage and transport in IRMOFs*, International Journal of Hydrogen
-Energy (under review), 2026.
+hydrogen storage and transport in IRMOFs*, The Journal of Physical
+Chemistry C (under review), 2026.
 
 ## Contents
 
@@ -15,6 +15,9 @@ neutral_cif/                  Framework structures (CIF): IRMOF-1 and IRMOF-2-X
 mof_data/                     Supporting framework data used by the inputs
 simulation.input.template     RASPA2 input template (GCMC / Widom / textural)
 in.lammps.template            LAMMPS input template (NVT MD, self-diffusion)
+forcefield/UFF-shifted/       RASPA2 force field (UFF, shifted, no tail corrections)
+molecules/Adsorbates/         H2 molecule definition (three-site Darkrim–Levesque)
+experimental_data/            Published IRMOF-1 H2 isotherms (77 K) and selection script
 ```
 
 The IRMOF-2-X structures were built from the IRMOF-2-Br unit cell
@@ -35,7 +38,7 @@ files to set the framework, temperature, and pressure for each run.
 @article{moralesdiaz_halogenation_2026,
   title   = {Halogenation effects on hydrogen storage and transport in IRMOFs},
   author  = {Morales-D{\'i}az, Carlos and Mej{\'i}a, Andr{\'e}s and Alonso, Gerard},
-  journal = {International Journal of Hydrogen Energy},
+  journal = {J. Phys. Chem. C},
   year    = {2026},
   note    = {Under review}
 }

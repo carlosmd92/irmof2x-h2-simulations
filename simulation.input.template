@@ -12,7 +12,7 @@ PrintPseudoAtomsToOutput                  no
 #Force field definitions
 CutOffVDW                                 12.8
 CutOffCoulomb                             12.8
-Forcefield                                UFF-TC
+Forcefield                                UFF-shifted
 ChargeMethod                              Ewald
 ChargeFromChargeEquilibration             no
 UseChargesFromCIFFile                     yes

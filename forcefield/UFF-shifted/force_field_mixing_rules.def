@@ -1,0 +1,46 @@
+# general rule for shifted vs truncated
+shifted
+# general rule tailcorrections (yes/no)
+no
+# number of defined interactions
+37
+# type,   interaction,                   epsilon [K],   sigma [A], reduced mass [uma] IMPORTANT: define shortest matches first, so that more specific ones overwrites these
+C_        lennard-jones                  52.83806       3.43085              // UFF A.K. Rappé et al., J. Am. Chem. Soc. 1992, 114, 10024-10035. 
+O_        lennard-jones                  30.19317       3.11815              // UFF
+H_        lennard-jones                  22.14166       2.57113              // UFF
+Zn_       lennard-jones                  62.39923       2.46155              // UFF
+F_        lennard-jones                  25.16098       2.99698              // UFF
+Cl_       lennard-jones                 114.23084       3.51638              // UFF
+Br_       lennard-jones                 126.30811       3.73197              // UFF
+I_        lennard-jones                 170.59144       4.00904              // UFF
+Li_       lennard-jones                  12.58049       2.18359              // UFF
+Be_       lennard-jones                  42.77366       2.44552              // UFF
+Na_       lennard-jones                  15.09659       2.65755              // UFF
+Mg_       lennard-jones                  55.85737       2.69141              // UFF
+Al_       lennard-jones                 254.12588       4.00815              // UFF
+K_        lennard-jones                  17.61269       3.39611              // UFF
+Ca_       lennard-jones                 119.76626       3.02816              // UFF
+Cu_       lennard-jones                   2.51610       3.11369              // UFF
+He        lennard-jones                  10.90000       2.64000              // J.O. Hirschfelder et al., Molecular Theory of Gases and Liquids, Wiley, New York, 1954, p. 1114.
+Ar        lennard-jones                 124.07000       3.38000              // A. Martin-Calvo et al. , Phys. Chem. Chem. Phys. 2011, 13, 11165-11174.
+N_n2      lennard-jones                  38.29800       3.30600              // 
+N_com     none                                                               // 
+O_o2      lennard-jones                  53.02300       3.04500              // 
+O_com     none                                                               // 
+O_co2     lennard-jones                  79.00000       3.05000              // J. Potoff, and J.I. Siepmann, AIChE J. 47, 1676-1682 (2001).
+C_co2     lennard-jones                  27.00000       2.80000              // 
+CH4       lennard-jones                 148.00000       3.73000              // M.G. Martin, and J.I. Siepmann, J. Phys. Chem. B 102, 2569-2577 (1998)
+H_com     feynman-hibbs-lennard-jones    36.70000       2.95800    1.00794   // Y. Li et al., AIChE Journal, 2023, 70. (10.1002/aic.18283)
+H_h2      hard-sphere                     1.00000                            // UFF
+Cl_s      lennard-jones                 114.23084       3.51638              // UFF
+Li_s      lennard-jones                  12.58049       2.18359              // UFF
+Be_       lennard-jones                  42.77366       2.44552              // UFF
+Na_s      lennard-jones                  15.09659       2.65755              // UFF 
+Mg_s      lennard-jones                  55.85737       2.69141              // UFF
+Al_s      lennard-jones                 254.12588       4.00815              // UFF
+K_s       lennard-jones                  17.61269       3.39611              // UFF
+Ca_s      lennard-jones                 119.76626       3.02816              // UFF
+Cu1_s     lennard-jones                   2.51610       3.11369              // UFF
+Cu2_s     lennard-jones                   2.51610       3.11369              // UFF
+# general mixing rule for Lennard-Jones                
+Lorentz-Berthelot
