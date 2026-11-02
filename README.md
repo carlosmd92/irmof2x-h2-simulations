@@ -4,9 +4,9 @@ Crystal structures and example simulation inputs for hydrogen adsorption and
 diffusion in **IRMOF-1 (MOF-5)** and its halogenated **IRMOF-2-X (X = F, Cl, Br, I)**
 derivatives.
 
-Accompanies: C. Morales-Díaz, A. Mejía, G. Alonso, *Halogenation effects on
-hydrogen storage and transport in IRMOFs*, The Journal of Physical
-Chemistry C (under review), 2026.
+Accompanies: C. Morales-Díaz, A. Mejía, G. Alonso, *Molecular Simulation of
+Hydrogen Adsorption and Diffusion in the Halogenated IRMOF-2-X Series*, The
+Journal of Physical Chemistry C (under review), 2026.
 
 ## Contents
 
@@ -36,7 +36,7 @@ files to set the framework, temperature, and pressure for each run.
 
 ```bibtex
 @article{moralesdiaz_halogenation_2026,
-  title   = {Halogenation effects on hydrogen storage and transport in IRMOFs},
+  title   = {Molecular Simulation of Hydrogen Adsorption and Diffusion in the Halogenated {IRMOF}-2-{X} Series},
   author  = {Morales-D{\'i}az, Carlos and Mej{\'i}a, Andr{\'e}s and Alonso, Gerard},
   journal = {J. Phys. Chem. C},
   year    = {2026},
