@@ -12,7 +12,8 @@ Journal of Physical Chemistry C (under review), 2026.
 
 ```
 neutral_cif/                  Framework structures (CIF): IRMOF-1 and IRMOF-2-X
-mof_data/                     Supporting framework data used by the inputs
+mof_data/                     LAMMPS inputs: framework .data, Zn region files,
+                              H2.mol, tabulated FH potential, region generator
 simulation.input.template     RASPA2 input template (GCMC / Widom / textural)
 in.lammps.template            LAMMPS input template (NVT MD, self-diffusion)
 forcefield/UFF-shifted/       RASPA2 force field (UFF, shifted, no tail corrections)
@@ -34,6 +35,8 @@ files to set the framework, temperature, and pressure for each run.
 
 ## Citation
 
+If you use this repository, please cite both the paper and the archived dataset:
+
 ```bibtex
 @article{moralesdiaz_halogenation_2026,
   title   = {Molecular Simulation of Hydrogen Adsorption and Diffusion in the Halogenated {IRMOF}-2-{X} Series},
@@ -41,6 +44,14 @@ files to set the framework, temperature, and pressure for each run.
   journal = {J. Phys. Chem. C},
   year    = {2026},
   note    = {Under review}
+}
+
+@dataset{moralesdiaz_dataset_2026,
+  title     = {Crystal Structures and Simulation Inputs for Hydrogen Adsorption and Diffusion in the Halogenated {IRMOF}-2-{X} Series},
+  author    = {Morales-D{\'i}az, Carlos and Mej{\'i}a, Andr{\'e}s and Alonso, Gerard},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.20741652}
 }
 ```
 

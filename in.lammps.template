@@ -30,13 +30,13 @@ angle_style  harmonic
 angle_coeff  1 0 180.0
 
 # ----------------------------- Zn regions and free zone -------------#
-include regiones_IRMOF-1.lammps   # Zn regions definitions
+include regions_IRMOF-1.lammps   # Zn regions definitions
 
 # Actual box
 region simbox block EDGE EDGE EDGE EDGE EDGE EDGE units box
 
 # Outside Zn 
-region outside_zns union 2 zonas_zn zonas_zn side out
+region outside_zns union 2 zn_zones zn_zones side out
 
 # Free zone = box intersect outside Zn regions
 region free intersect 2 simbox outside_zns
@@ -83,7 +83,7 @@ pair_style hybrid/overlay table linear 10000 coul/long ${rcut}
 # coul/long to all pairs
 pair_coeff * * coul/long
 
-# Tabulated FH1 potential to all H_com (type 1) y MOF (types 3,4,5,6,7,8,9) atoms
+# Tabulated FH1 potential to all H_com (type 1) and MOF (types 3,4,5,6,7,8,9) atoms
 pair_coeff 1 1 table ${tabfile} LJFH1_H_com_H_com
 pair_coeff 1 3 table ${tabfile} LJFH1_H_com_H1
 pair_coeff 1 4 table ${tabfile} LJFH1_H_com_C1
@@ -93,7 +93,7 @@ pair_coeff 1 7 table ${tabfile} LJFH1_H_com_O1
 pair_coeff 1 8 table ${tabfile} LJFH1_H_com_O2
 pair_coeff 1 9 table ${tabfile} LJFH1_H_com_Zn1
 
-# Configuración de KSPACE 
+# KSPACE settings
 kspace_style pppm 1e-6
 
 # ====== Short NVT equilibration ======
@@ -126,7 +126,7 @@ variable diff equal (0.1*c_msd_all[4])/(6*(step*dt+0.0000001))
 thermo       1000
 thermo_style custom step time temp c_T_H2 evdwl epair elong pe ke etotal c_msd_all[4] v_diff
 
-# --- MSD fina: without averages, high resolution (0.1)
+# --- MSD fine: without averages, high resolution (0.1)
 fix msd_fine H2 ave/time 100 1 100 v_msd_x v_msd_y v_msd_z v_msd_tot file MSD/msd_fine.out mode scalar
 
 # --- MSD long: with/without averages, resolution of (10 ps)

@@ -1,103 +1,117 @@
+"""Retention criteria for experimental H2 isotherms on IRMOF-1 at 77 K.
+
+The NIST/ARPA-E Adsorption Database indexes many H2 isotherms on IRMOF-1 near
+77 K. A fraction carry mislabelled units and report physically impossible
+uptakes. Two criteria remove them before the isotherms are used as a reference
+distribution:
+
+1. Physical upper bound. The absolute uptake cannot exceed the pore volume
+   filled with liquid H2 at its normal boiling point,
+
+       n_max = V_pore * rho_liq / M
+             = 1.3812 cm3/g * 70.85 g/L / 2.016 g/mol = 48.5 mol/kg.
+
+   Isotherms whose maximum exceeds 60 mol/kg (24% above this bound, allowing for
+   samples with a larger pore volume than the ideal crystal) are discarded.
+
+2. Lower bound. Isotherms whose maximum over the measured range is below
+   0.5 mol/kg are discarded as incompatible with IRMOF-1 at 77 K.
+
+Input is a JSON list of isotherm records, one per isotherm:
+
+    [{"DOI": "...", "P": [bar, ...], "A": [mol/kg, ...]}, ...]
+
+Output is a CSV with the inter-laboratory distribution of the retained isotherms
+at a set of reference pressures.
+
+Usage:
+    python selection_criteria.py isotherms.json dispersion_irmof1_77K.csv
 """
-Dispersion experimental de H2 en IRMOF-1 a 77 K, con filtro fisico.
-
-El primer paso incluia curvas con captaciones de hasta 217 mol/kg, imposibles.
-Provienen de unidades mal etiquetadas en la base, no de los datos originales.
-
-Criterio de exclusion, fisico y no arbitrario: la captacion absoluta no puede
-superar el volumen de poro lleno de H2 liquido en su punto de ebullicion normal,
-
-    n_max = V_poro * rho_liq / M = 1.3812 cm3/g * 70.85 g/L / 2.016 g/mol
-          = 48.5 mol/kg
-
-Se descarta toda curva cuyo maximo supere 60 mol/kg, un 24 % por encima de esa
-cota para dar margen a muestras con volumen de poro mayor al del cristal ideal.
-Se descartan tambien las curvas cuyo maximo no llega a 0,5 mol/kg, incompatibles
-con IRMOF-1 a 77 K en el rango medido.
-
-Cada curva excluida se reporta con su DOI para que la exclusion sea auditable.
-"""
+import argparse
 import json
+from collections import Counter
+
 import numpy as np
 import pandas as pd
 
-W = r"C:/Users/Alberto/Desktop/remediacion/datos_experimentales"
-DAT = W
+V_PORE = 1.3812   # cm3/g, accessible pore volume of IRMOF-1
+RHO_LIQ = 70.85   # g/L, liquid H2 at its normal boiling point
+M = 2.016         # g/mol, H2
+N_MAX_PHYS = V_PORE * RHO_LIQ / M   # 48.5 mol/kg
 
-V_PORO, RHO_LIQ, M = 1.3812, 70.85, 2.016
-N_MAX_FIS = V_PORO * RHO_LIQ / M
-HI, LO = 60.0, 0.5
+UPPER = 60.0      # mol/kg, discard isotherms whose maximum exceeds this
+LOWER = 0.5       # mol/kg, discard isotherms whose maximum is below this
+REF_P = [0.5, 1, 2, 5, 10, 20, 30, 50, 80]   # reference pressures (bar)
+MIN_CURVES = 5    # minimum isotherms contributing at a pressure for it to be reported
 
-rows = json.load(open(f"{DAT}/irmof1_77K_curvas.json", encoding="utf-8"))
-print(f"cota fisica (poro lleno de H2 liquido): {N_MAX_FIS:.1f} mol/kg")
-print(f"curvas descargadas: {len(rows)}  de {len(set(r['DOI'] for r in rows))} publicaciones\n")
 
-good, bad = [], []
-for r in rows:
-    A = np.array(r["A"], float)
-    P = np.array(r["P"], float)
-    m = np.isfinite(A) & np.isfinite(P)
-    if m.sum() < 3:
-        bad.append((r, "menos de 3 puntos finitos")); continue
-    A, P = A[m], P[m]
-    if A.max() > HI:
-        bad.append((r, f"maximo {A.max():.0f} mol/kg > cota")); continue
-    if A.max() < LO:
-        bad.append((r, f"maximo {A.max():.3f} mol/kg < 0,5")); continue
-    r = dict(r); r["A"], r["P"] = A.tolist(), P.tolist()
-    r["Pmin"], r["Pmax"] = float(P.min()), float(P.max())
-    good.append(r)
+def retain(records):
+    """Apply the two criteria; return retained records and the drop log."""
+    kept, dropped = [], []
+    for r in records:
+        A = np.asarray(r["A"], float)
+        P = np.asarray(r["P"], float)
+        ok = np.isfinite(A) & np.isfinite(P)
+        if ok.sum() < 3:
+            dropped.append((r["DOI"], "fewer than 3 finite points")); continue
+        A, P = A[ok], P[ok]
+        if A.max() > UPPER:
+            dropped.append((r["DOI"], f"maximum {A.max():.0f} mol/kg above bound")); continue
+        if A.max() < LOWER:
+            dropped.append((r["DOI"], f"maximum {A.max():.3f} mol/kg below {LOWER}")); continue
+        kept.append({"DOI": r["DOI"], "P": P, "A": A})
+    return kept, dropped
 
-print("=== curvas excluidas ===")
-from collections import Counter
-for doi, c in Counter(b[0]["DOI"] for b in bad).most_common():
-    ej = next(b[1] for b in bad if b[0]["DOI"] == doi)
-    print(f"  {c:3d}  {doi}   ({ej})")
-print(f"\nretenidas: {len(good)} curvas de {len(set(r['DOI'] for r in good))} publicaciones")
 
-TARGET = [0.5, 1, 2, 5, 10, 20, 30, 50, 80]
-stat = []
-for p in TARGET:
-    v, d = [], []
-    for r in good:
-        if r["Pmin"] <= p <= r["Pmax"]:
-            y = float(np.interp(p, r["P"], r["A"]))
-            if np.isfinite(y):
-                v.append(y); d.append(r["DOI"])
-    if len(v) < 5:
-        continue
-    v = np.array(v)
-    stat.append(dict(P_bar=p, n=len(v), n_doi=len(set(d)),
-                     mediana=np.median(v), media=v.mean(), sd=v.std(ddof=1),
-                     cv_pct=100 * v.std(ddof=1) / v.mean(),
-                     p10=np.percentile(v, 10), p25=np.percentile(v, 25),
-                     p75=np.percentile(v, 75), p90=np.percentile(v, 90),
-                     rango_p10_p90_pct=100 * (np.percentile(v, 90) - np.percentile(v, 10))
-                     / np.median(v)))
-s = pd.DataFrame(stat)
-s.to_csv(f"{W}/dispersion_irmof1_77K.csv", index=False)
-pd.set_option("display.width", 240)
-print("\n=== dispersion experimental, IRMOF-1 a 77 K (mol/kg) ===")
-print(s[["P_bar", "n", "n_doi", "mediana", "cv_pct", "p10", "p90",
-         "rango_p10_p90_pct"]].round(1).to_string(index=False))
+def distribution(kept):
+    """Inter-laboratory distribution of the retained isotherms at REF_P."""
+    rows = []
+    for p in REF_P:
+        contributing = [k for k in kept if k["P"].min() <= p <= k["P"].max()]
+        vals = np.array([float(np.interp(p, k["P"], k["A"])) for k in contributing])
+        vals = vals[np.isfinite(vals)]
+        if vals.size < MIN_CURVES:
+            continue
+        median = float(np.median(vals))
+        p10, p90 = np.percentile(vals, [10, 90])
+        rows.append({
+            "P_bar": p,
+            "n": int(vals.size),
+            "n_sources": len({k["DOI"] for k in contributing}),
+            "median": round(median, 3),
+            "mean": round(float(vals.mean()), 3),
+            "std": round(float(vals.std(ddof=1)), 3),
+            "cv_pct": round(100 * float(vals.std(ddof=1)) / float(vals.mean()), 1),
+            "p10": round(float(p10), 3),
+            "p25": round(float(np.percentile(vals, 25)), 3),
+            "p75": round(float(np.percentile(vals, 75)), 3),
+            "p90": round(float(p90), 3),
+            "p10_p90_range_pct": round(100 * (p90 - p10) / median, 1),
+        })
+    return pd.DataFrame(rows)
 
-CSV = (r"C:/Users/Alberto/Desktop/remediacion/cb_isotermas_resultados/results_cb.csv")
-d = pd.read_csv(CSV)
-d = d[(d.MOF == "IRMOF-1") & (np.isclose(d["Temperature_[K]"], 77.15))].sort_values("Pressure_[bar]")
-print("\n=== posicion de la simulacion en la distribucion experimental ===")
-print(f"{'P':>5} {'sim ALA':>8} {'sim ALE':>8} {'mediana':>8} {'pct ALA':>8} {'pct ALE':>8}")
-out = []
-for _, r in s.iterrows():
-    p = r.P_bar
-    a = float(np.interp(p, d["Pressure_[bar]"], d["ALA_[mol/kg framework]"]))
-    e = float(np.interp(p, d["Pressure_[bar]"], d["ALE_[mol/kg framework]"]))
-    v = np.array([float(np.interp(p, x["P"], x["A"])) for x in good
-                  if x["Pmin"] <= p <= x["Pmax"]])
-    pa, pe = 100 * (v < a).mean(), 100 * (v < e).mean()
-    out.append(dict(P_bar=p, sim_ALA=a, sim_ALE=e, mediana=r.mediana,
-                    pct_ALA=pa, pct_ALE=pe))
-    print(f"{p:5.1f} {a:8.2f} {e:8.2f} {r.mediana:8.2f} {pa:7.0f}% {pe:7.0f}%")
-pd.DataFrame(out).to_csv(f"{W}/posicion_simulacion_irmof1.csv", index=False)
-json.dump(good, open(f"{DAT}/irmof1_77K_curvas_limpias.json", "w", encoding="utf-8"))
-print(f"\n-> {W}/dispersion_irmof1_77K.csv")
-print(f"-> {W}/posicion_simulacion_irmof1.csv")
+
+def main():
+    ap = argparse.ArgumentParser(description="Apply retention criteria to IRMOF-1 H2 isotherms.")
+    ap.add_argument("input", help="JSON list of isotherm records {DOI, P [bar], A [mol/kg]}")
+    ap.add_argument("output", help="output CSV for the retained-isotherm distribution")
+    args = ap.parse_args()
+
+    records = json.load(open(args.input, encoding="utf-8"))
+    kept, dropped = retain(records)
+
+    print(f"physical bound (pore filled with liquid H2): {N_MAX_PHYS:.1f} mol/kg")
+    print(f"isotherms read:     {len(records):4d} from {len({r['DOI'] for r in records})} publications")
+    print(f"isotherms retained: {len(kept):4d} from {len({k['DOI'] for k in kept})} publications")
+    if dropped:
+        print("discarded (count by DOI):")
+        for doi, count in Counter(d[0] for d in dropped).most_common():
+            reason = next(d[1] for d in dropped if d[0] == doi)
+            print(f"  {count:3d}  {doi}  ({reason})")
+
+    distribution(kept).to_csv(args.output, index=False)
+    print(f"\nwrote {args.output}")
+
+
+if __name__ == "__main__":
+    main()

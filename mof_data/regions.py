@@ -1,90 +1,75 @@
 import os
 import glob
 
-def generar_regiones_lammps(archivo_data, tipo_atomo, archivo_salida, radio_esfera):
-    """
-    Lee un archivo de datos de LAMMPS, extrae las coordenadas de un tipo de átomo
-    y escribe directamente el archivo de regiones de LAMMPS.
-    """
-    coordenadas = []
-    leyendo_atomos = False
-    
+
+def write_region_file(data_file, atom_type, output_file, sphere_radius):
+    """Read a LAMMPS data file, extract the coordinates of one atom type, and
+    write the corresponding LAMMPS region file: one sphere per atom plus their
+    union."""
+    coords = []
+    reading_atoms = False
+
     try:
-        with open(archivo_data, 'r') as f:
-            for linea in f:
-                linea_limpia = linea.strip()
-                
-                if "Atoms" in linea_limpia:
-                    leyendo_atomos = True
+        with open(data_file, "r") as f:
+            for line in f:
+                stripped = line.strip()
+
+                if "Atoms" in stripped:
+                    reading_atoms = True
                     continue
-                
-                # Inicia el bloque de lectura de átomos
-                if leyendo_atomos:
-                    # Condición de parada: si encontramos una nueva sección, paramos.
-                    if "Bonds" in linea_limpia or "Angles" in linea_limpia or "Velocities" in linea_limpia:
-                        leyendo_atomos = False
+
+                if reading_atoms:
+                    # stop at the next section
+                    if "Bonds" in stripped or "Angles" in stripped or "Velocities" in stripped:
+                        reading_atoms = False
                         break
-                    
-                    # Si la línea está vacía, la ignoramos y continuamos
-                    if not linea_limpia:
+                    if not stripped:
                         continue
-                    
-                    # Si es una línea con datos, la procesamos
-                    partes = linea_limpia.split()
-                    if int(partes[2]) == tipo_atomo:
-                        coordenadas.append([float(partes[4]), float(partes[5]), float(partes[6])])
+                    parts = stripped.split()
+                    if int(parts[2]) == atom_type:
+                        coords.append([float(parts[4]), float(parts[5]), float(parts[6])])
 
     except FileNotFoundError:
-        print(f"Error: No se encontró el archivo de datos '{archivo_data}'")
+        print(f"Error: data file '{data_file}' not found")
         return
 
-    if not coordenadas:
-        print(f"Advertencia: No se encontraron átomos del tipo {tipo_atomo} en '{archivo_data}'")
+    if not coords:
+        print(f"Warning: no atoms of type {atom_type} found in '{data_file}'")
         return
 
-    # Escribir el archivo de salida
-    with open(archivo_salida, 'w') as f:
-        f.write(f"# Archivo de regiones para {os.path.basename(archivo_data)} (generado automáticamente)\n")
-        
-        id_regiones = []
-        for i, (x, y, z) in enumerate(coordenadas):
-            id_region = f"zn_esfera_{i+1}"
-            id_regiones.append(id_region)
-            f.write(f"region {id_region} sphere {x:.4f} {y:.4f} {z:.4f} {radio_esfera}\n")
-        
-        if id_regiones:
-            f.write("\n# Unir todas las esferas en una sola región\n")
-            union_cmd = f"region zonas_zn union {len(id_regiones)} {' '.join(id_regiones)}\n"
-            f.write(union_cmd)
+    with open(output_file, "w") as f:
+        f.write(f"# Zn-sphere regions for {os.path.basename(data_file)}\n")
+        region_ids = []
+        for i, (x, y, z) in enumerate(coords):
+            region_id = f"zn_sphere_{i + 1}"
+            region_ids.append(region_id)
+            f.write(f"region {region_id} sphere {x:.4f} {y:.4f} {z:.4f} {sphere_radius}\n")
+        if region_ids:
+            f.write("\n# Union of all spheres into a single region\n")
+            f.write(f"region zn_zones union {len(region_ids)} {' '.join(region_ids)}\n")
 
-    print(f"-> Archivo '{archivo_salida}' generado con {len(coordenadas)} regiones.")
+    print(f"-> wrote '{output_file}' with {len(coords)} regions")
 
-# ==============================================================================
-#                      ### CONFIGURACIÓN PRINCIPAL ###
-# ==============================================================================
-mof_info = {
+
+# Zn atom type (column 3 of the Atoms section) for each framework
+MOF_ZN_TYPE = {
     "IRMOF-1": 9,
     "IRMOF-2-Br": 9,
     "IRMOF-2-Cl": 9,
     "IRMOF-2-F": 9,
-    "IRMOF-2-I": 9
+    "IRMOF-2-I": 9,
 }
-radio_esfera = 3.5
-# ==============================================================================
+SPHERE_RADIUS = 3.5
 
 if __name__ == "__main__":
-    archivos_data = glob.glob('*.data')
-    if not archivos_data:
-        print("No se encontraron archivos .data en esta carpeta.")
-    else:
-        print(f"Se encontraron {len(archivos_data)} archivos .data para procesar...")
-
-    for data_file in archivos_data:
-        base_name = os.path.splitext(os.path.basename(data_file))[0]
-        if base_name in mof_info:
-            tipo_zn = mof_info[base_name]
-            output_file = f"regiones_{base_name}.lammps"
-            print(f"\nProcesando '{data_file}'...")
-            generar_regiones_lammps(data_file, tipo_zn, output_file, radio_esfera)
+    data_files = glob.glob("*.data")
+    if not data_files:
+        print("No .data files found in this directory.")
+    for data_file in data_files:
+        base = os.path.splitext(os.path.basename(data_file))[0]
+        if base in MOF_ZN_TYPE:
+            output_file = f"regions_{base}.lammps"
+            print(f"\nProcessing '{data_file}'...")
+            write_region_file(data_file, MOF_ZN_TYPE[base], output_file, SPHERE_RADIUS)
         else:
-            print(f"\nAdvertencia: El MOF '{base_name}' no está en el diccionario 'mof_info'. Se omitirá.")
+            print(f"\nWarning: framework '{base}' not in MOF_ZN_TYPE; skipped.")
